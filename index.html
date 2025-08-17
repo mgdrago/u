@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Time Management Videos • Simple & Student-Friendly</title>
+  <meta name="description" content="Auto-updating list of time management videos from TEDx, top universities, IITs, AIIMS, business schools, and famous authors.">
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&family=Montserrat:wght@500;700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root { --teal:#008080; --black:#000101; --gray:#b4b4b4; --line:#e5e7eb; --muted:#475569; }
+    * { box-sizing: border-box; }
+    body { margin:0; background:#fff; color:#111; font-family:'Poppins',system-ui,Arial; }
+    .header { border-bottom:1px solid var(--line); background: radial-gradient(80% 60% at 10% -10%, rgba(0,128,128,0.12), transparent),
+                                      radial-gradient(70% 60% at 90% 0%, rgba(180,180,180,0.12), transparent); }
+    .wrap { max-width:1100px; margin:0 auto; padding:20px; }
+    h1 { margin:0; font-family:'Oswald',sans-serif; font-size:28px; display:flex; align-items:center; gap:12px; }
+    .logo-text { display:inline-flex; gap:0; align-items:center; font-weight:700; letter-spacing:.2px; }
+    .logo-text .sco { color:#000; }
+    .logo-text .rest { color: var(--teal); }
+    .badges { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+    .badge { background:#f0fdfa; border:1px solid #ccfbf1; color:#065f46; padding:6px 10px; border-radius:999px; font-size:12px; font-weight:600; font-family:'Montserrat',sans-serif; }
+
+    .toolbar { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:12px; }
+    input, select, button { padding:10px 12px; border:1px solid var(--line); border-radius:12px; font-family:'Montserrat',sans-serif; }
+    input[type="search"] { min-width:260px; outline:none; }
+    input[type="search"]:focus { border-color: var(--teal); box-shadow:0 0 0 3px rgba(0,128,128,.15); }
+    button { cursor:pointer; background:#fff; font-weight:700; }
+    button.primary { background: var(--teal); color:#fff; border:none; }
+
+    .chips { display:flex; gap:8px; flex-wrap:wrap; }
+    .chip { background:#f8fafc; border:1px dashed var(--line); padding:6px 10px; border-radius:999px; font-size:12px; cursor:pointer; user-select:none; font-family:'Montserrat',sans-serif; }
+    .chip.active { background:#e6fffa; border-color:#99f6e4; }
+
+    .meta { color: var(--muted); font-size: 14px; font-family:'Montserrat',sans-serif; margin-top:8px; }
+    .grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(280px,1fr)); gap:16px; margin-top:16px; }
+    .card { border:1px solid var(--line); border-radius:14px; padding:12px; background:#fff; box-shadow: 0 8px 24px rgba(2,36,39,.06); }
+    .thumb { width:100%; aspect-ratio:16/9; object-fit:cover; border-radius:10px; }
+    .title { display:inline-block; margin-top:8px; font-weight:700; color:#0f172a; text-decoration:none; }
+    .title:hover { text-decoration:underline; }
+    .source-tag { display:inline-block; background:#f3fdfd; color:var(--teal); border:1px solid #d8f3f3; padding:2px 8px; border-radius:999px; font-size:12px; margin-right:6px; }
+
+    footer { color:#64748b; font-size:12px; margin:28px 0 16px; }
+    @media (max-width:640px){ .toolbar{flex-direction:column; align-items:stretch;} input{min-width:0;} }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="wrap">
+      <h1><span class="logo-text"><span class="sco">sco</span><span class="rest">reazy</span></span> • Time Management Videos</h1>
+      <div class="badges">
+        <span class="badge">Student Edition</span>
+        <span class="badge">English 🇬🇧 / Hindi 🇮🇳</span>
+        <span class="badge">Auto-updating</span>
+      </div>
+
+      <div class="toolbar">
+        <input id="q" type="search" placeholder="Search titles… e.g., ‘Pomodoro’, ‘study’, ‘habit’">
+        <div class="chips">
+          <span class="chip" data-filter="TEDx">TEDx</span>
+          <span class="chip" data-filter="Harvard">Harvard</span>
+          <span class="chip" data-filter="Oxford">Oxford</span>
+          <span class="chip" data-filter="IIT">IIT</span>
+          <span class="chip" data-filter="AIIMS">AIIMS</span>
+          <span class="chip" data-filter="B-School">B‑School</span>
+          <span class="chip" data-filter="Author">Author</span>
+          <span class="chip" id="clear">Clear filters</span>
+        </div>
+        <div style="flex:1"></div>
+        <button class="primary" id="refresh">Refresh</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="meta">Newest first. Click the <strong>title</strong> to open on YouTube.</div>
+    <div id="grid" class="grid"></div>
+    <footer>Fonts: Oswald (titles), Montserrat (headings), Poppins (body). Colors: Teal #008080, Gray #b4b4b4, Black #000101, White #ffffff.</footer>
+  </div>
+
+  <script>
+    const grid = document.getElementById('grid');
+    let all = [];
+
+    async function load() {
+      try {
+        const res = await fetch('./videos.json', { cache: 'no-store' });
+        all = (await res.json()) || [];
+        render(all);
+      } catch (e) {
+        grid.innerHTML = '<div class="meta">No videos yet. Add channel IDs in <code>scripts/fetch.mjs</code> and run the workflow.</div>';
+      }
+    }
+
+    function render(list) {
+      const q = document.getElementById('q').value.trim().toLowerCase();
+      const active = [...document.querySelectorAll('.chip.active')].map(ch => ch.dataset.filter);
+      let current = list.slice();
+
+      if (q) current = current.filter(v => (v.title||'').toLowerCase().includes(q));
+      if (active.length) current = current.filter(v => active.some(tag => (v.source||'').toLowerCase().includes(tag.toLowerCase())));
+
+      grid.innerHTML = current.map(v => `
+        <div class="card">
+          <img class="thumb" src="${v.thumbnail}" alt="${v.title} thumbnail" loading="lazy">
+          <div class="meta"><span class="source-tag">${v.source || 'Source'}</span> ${new Date(v.publishDate).toLocaleDateString()}</div>
+          <a class="title" href="${v.link || ('https://www.youtube.com/watch?v=' + v.videoId)}" target="_blank" rel="noopener">${v.title}</a>
+        </div>
+      `).join('');
+    }
+
+    // Search
+    document.getElementById('q').addEventListener('input', () => render(all));
+
+    // Chips
+    document.querySelectorAll('.chip[data-filter]').forEach(ch => {
+      ch.addEventListener('click', () => { ch.classList.toggle('active'); render(all); });
+    });
+    document.getElementById('clear').addEventListener('click', () => {
+      document.querySelectorAll('.chip').forEach(c => c.classList.remove('active')); render(all);
+    });
+
+    // Manual refresh (re-fetch videos.json)
+    document.getElementById('refresh').addEventListener('click', load);
+
+    load();
+  </script>
+</body>
+</html>
